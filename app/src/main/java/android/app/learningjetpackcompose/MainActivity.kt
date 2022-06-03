@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import android.app.learningjetpackcompose.ui.theme.LearningJetpackComposeTheme
 import android.widget.Space
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -49,33 +51,43 @@ class MainActivity : ComponentActivity() {
 
         setContent {
 
-            val constraints = ConstraintSet{
-                val greenBox = createRefFor("greenBox")
-                val redBox = createRefFor("redBox")
-                val guideline = createGuidelineFromTop(0.5f)
-                constrain(greenBox){
-                    top.linkTo(guideline)
-                    start.linkTo(parent.start)
-                    width = Dimension.value(100.dp)
-                    height = Dimension.value(100.dp)
+          var sizeState by remember { mutableStateOf(200.dp) }
+            val size by animateDpAsState(
+                targetValue = sizeState,
+                tween(
+                    durationMillis = 1000,
+                    //delayMillis = 300,
+                    //easing = LinearOutSlowInEasing
+                )
+//           keyframes {
+//
+//               durationMillis = 5000
+//               sizeState at 0 with LinearEasing
+//               sizeState * 1.5f at 1000 with FastOutLinearInEasing
+//               sizeState * 2f at 5000
+//           }
+            )
+            val infiniteTransition = rememberInfiniteTransition()
+            val color by infiniteTransition.animateColor(
+                initialValue = Color.Red,
+                targetValue = Color.Green,
+                animationSpec = infiniteRepeatable(
+                    tween(durationMillis = 2000),
+                    repeatMode = RepeatMode.Reverse
+
+                )
+            )
+            Box(modifier = Modifier
+                .size(size)
+                .background(color),
+                contentAlignment = Alignment.Center){
+                    Button(onClick = {
+                        sizeState += 50.dp
+                    }) {
+                        Text(text = "Increase Size")
+
+                    }
                 }
-                constrain(redBox){
-                    top.linkTo(parent.top)
-                    start.linkTo(greenBox.end)
-                    end.linkTo(parent.end)
-                    width = Dimension.value(100.dp)
-                    height = Dimension.value(100.dp)
-                }
-                createHorizontalChain(greenBox,redBox, chainStyle = ChainStyle.Packed)
-            }
-            ConstraintLayout(constraints, modifier = Modifier.fillMaxSize()) {
-                Box(modifier = Modifier
-                    .background(Color.Green)
-                    .layoutId("greenBox"))
-                Box(modifier = Modifier
-                    .background(Color.Red)
-                    .layoutId("redBox"))
-            }
         }
     }
 }
