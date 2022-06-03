@@ -20,8 +20,11 @@ import androidx.compose.material.*
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layoutId
@@ -36,12 +39,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ChainStyle
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
@@ -51,45 +57,65 @@ class MainActivity : ComponentActivity() {
 
         setContent {
 
-          var sizeState by remember { mutableStateOf(200.dp) }
-            val size by animateDpAsState(
-                targetValue = sizeState,
-                tween(
-                    durationMillis = 1000,
-                    //delayMillis = 300,
-                    //easing = LinearOutSlowInEasing
-                )
-//           keyframes {
-//
-//               durationMillis = 5000
-//               sizeState at 0 with LinearEasing
-//               sizeState * 1.5f at 1000 with FastOutLinearInEasing
-//               sizeState * 2f at 5000
-//           }
-            )
-            val infiniteTransition = rememberInfiniteTransition()
-            val color by infiniteTransition.animateColor(
-                initialValue = Color.Red,
-                targetValue = Color.Green,
-                animationSpec = infiniteRepeatable(
-                    tween(durationMillis = 2000),
-                    repeatMode = RepeatMode.Reverse
+            Box (
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+                    ){
+                CircularProgressBar(percentage = 0.8f, number = 100)
 
-                )
-            )
-            Box(modifier = Modifier
-                .size(size)
-                .background(color),
-                contentAlignment = Alignment.Center){
-                    Button(onClick = {
-                        sizeState += 50.dp
-                    }) {
-                        Text(text = "Increase Size")
-
-                    }
-                }
+            }
         }
     }
+}
+
+@Composable
+fun CircularProgressBar(
+    percentage : Float,
+    number : Int,
+    fontSize : TextUnit = 28.sp,
+    radius: Dp = 50.dp,
+    color: Color = Color.Green,
+    strokeWidth: Dp = 8.dp,
+    animDuration : Int = 1000,
+    animDelay: Int = 0
+){
+
+    var animationPlayed by remember {
+        mutableStateOf(false)
+    }
+    val curPercentage = animateFloatAsState(
+        targetValue = if (animationPlayed) percentage else 0f,
+        animationSpec = tween(
+            durationMillis = animDuration,
+            delayMillis = animDelay
+        )
+    )
+    LaunchedEffect(key1 = true){
+        animationPlayed = true
+    }
+    
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(radius *2f)
+    ) {
+        Canvas(modifier = Modifier.size(radius * 2f)){
+            drawArc(
+                color = color,
+                -90f,
+                360 * curPercentage.value,
+                useCenter = false,
+                style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
+            )
+        }
+        Text(
+            text = (curPercentage.value * number).toInt().toString(),
+            color = Color.Black,
+            fontSize = fontSize,
+            fontWeight = FontWeight.Bold
+        )
+        
+    }
+
 }
 
 
